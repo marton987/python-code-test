@@ -3,6 +3,7 @@ from rest_framework import viewsets
 
 from shiptrader.models import Starship, Listing
 from shiptrader.serializers import StarshipSerializer, ListingSerializer
+from django_filters.rest_framework import DjangoFilterBackend
 
 
 class StarshipViewSet(viewsets.ReadOnlyModelViewSet):
@@ -19,3 +20,5 @@ class ListingViewSet(viewsets.ReadOnlyModelViewSet):
     """
     queryset = Listing.objects.all()
     serializer_class = ListingSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filter_fields = ('ship_type__starship_class',)

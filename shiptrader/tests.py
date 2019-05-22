@@ -151,6 +151,53 @@ class ListingTestCase(APITestCase):
         self.assertEqual(fetched_listing.get('ship_type'), stored_listing.ship_type.pk,
                          u'ship_type value does not match')
 
+    def test_filter_listings(self):
+        """ User should be able to filter listings against starship_class """
+        starship_class = 'random_text'
+        starship = StarshipFactory(starship_class=starship_class)
+        listing = ListingFactory(ship_type=starship)
+
+        response = self.client.get(
+            reverse('listings-list'),
+            {'ship_type__starship_class': starship_class}
+        )
+
+        stored_data = response.data
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, u'Status code does not match')
+
+        count_listings = Listing.objects.count()
+        self.assertGreater(count_listings, 0, u'No listings on DB')
+        self.assertNotEqual(len(stored_data), count_listings, u'Number of results is matching')
+        self.assertEqual(len(stored_data), 1, u'Filtered result is not being showed')
+
+        fetched_listing = stored_data[0]
+
+        # Validate listing values
+        self.assertEqual(fetched_listing.get('id'), listing.pk, u'Id value does not match')
+        self.assertEqual(fetched_listing.get('name'), listing.name, u'name value does not match')
+        self.assertEqual(fetched_listing.get('price'), listing.price, u'price value does not match')
+        self.assertEqual(fetched_listing.get('ship_type'), listing.ship_type.pk,
+                         u'ship_type value does not match')
+
+    def test_filter_listings_invalid(self):
+        """ User should be able to filter listings against starship_class with existing starships """
+        starship_class = 'random_text'
+
+        response = self.client.get(
+            reverse('listings-list'),
+            {'ship_type__starship_class': starship_class}
+        )
+
+        stored_data = response.data
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, u'Status code does not match')
+
+        count_listings = Listing.objects.count()
+        self.assertGreater(count_listings, 0, u'No listings on DB')
+        self.assertNotEqual(len(stored_data), count_listings, u'Number of results is matching')
+        self.assertEqual(len(stored_data), 0, u'Filtered result already exists')
+
     def test_get_listings(self):
         """ Get returns a valid listing """
         listing = ListingFactory()
