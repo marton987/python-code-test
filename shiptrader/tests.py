@@ -297,8 +297,12 @@ class ListingTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND, u'Status code does not match')
 
     def test_create_listings(self):
-        """ User try to create a listing """
-        listing_stub = ListingFactory.stub(ship_type=self.starship.pk).__dict__
+        """ User can create a listing giving the starship name and list price"""
+        starship = StarshipFactory()
+        listing_stub = ListingFactory.stub().__dict__
+        listing_stub['starship_class'] = starship.starship_class
+        del listing_stub['ship_type']
+        del listing_stub['listing_time']
 
         response = self.client.post(
             reverse('listings-list'),
@@ -306,12 +310,22 @@ class ListingTestCase(APITestCase):
             content_type='application/json'
         )
 
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED, u'Status code does not match')
+        stored_data = response.data
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, u'Status code does not match')
+
+        self.assertEqual(stored_data.get('name'), listing_stub.get('name'), u'name attribute does not match')
+        self.assertEqual(stored_data.get('price'), listing_stub.get('price'), u'price attribute does not match')
+        self.assertEqual(stored_data.get('listing_time'), 1, u'listing_time attribute does not match')
+        self.assertEqual(stored_data.get('ship_type'), starship.pk, u'ship_type attribute does not match')
 
     def test_update_listings(self):
-        """ User try to update a listing """
+        """ User can update a listing """
+        starship = StarshipFactory()
         listing = ListingFactory()
-        listing_stub = ListingFactory.stub(ship_type=self.starship.pk).__dict__
+        listing_stub = ListingFactory.stub().__dict__
+        listing_stub['starship_class'] = starship.starship_class
+        del listing_stub['ship_type']
 
         response = self.client.put(
             reverse('listings-detail', kwargs={'pk': listing.pk}),
@@ -319,14 +333,65 @@ class ListingTestCase(APITestCase):
             content_type='application/json'
         )
 
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED, u'Status code does not match')
+        stored_data = response.data
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, u'Status code does not match')
+
+        self.assertEqual(stored_data.get('name'), listing_stub.get('name'), u'name attribute does not match')
+        self.assertEqual(stored_data.get('price'), listing_stub.get('price'), u'price attribute does not match')
+        # We shouldn't update listings ship_types, just deactivate or reactivate
+        self.assertNotEqual(stored_data.get('ship_type'), starship.pk, u'ship_type was updated')
+        self.assertEqual(stored_data.get('listing_time'), listing_stub.get('listing_time'),
+                         u'listing_time attribute does not match')
+
+    def test_deactivate_listings(self):
+        """ User can deactivate a listing """
+        listing = Listing.objects.active().first()
+        listing_stub = ListingFactory.stub(listing_time=0).__dict__
+        listing_stub['starship_class'] = listing.ship_type.starship_class
+        del listing_stub['ship_type']
+
+        response = self.client.put(
+            reverse('listings-detail', kwargs={'pk': listing.pk}),
+            json.dumps(listing_stub),
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, u'Status code does not match')
+
+        active_listings = list(Listing.objects.active().values_list('pk', flat=True))
+        self.assertNotIn(listing.pk, active_listings, u'Listings is still active')
+
+    def test_reactivate_listings(self):
+        """ User can reactivate a listing """
+        listing = ListingFactory(listing_time=0)
+
+        active_listings = list(Listing.objects.active().values_list('pk', flat=True))
+        self.assertNotIn(listing.pk, active_listings, u'Listings is still active')
+
+        listing_stub = ListingFactory.stub(listing_time=10).__dict__
+        listing_stub['starship_class'] = listing.ship_type.starship_class
+        del listing_stub['ship_type']
+
+        response = self.client.put(
+            reverse('listings-detail', kwargs={'pk': listing.pk}),
+            json.dumps(listing_stub),
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, u'Status code does not match')
+
+        active_listings = list(Listing.objects.active().values_list('pk', flat=True))
+        self.assertIn(listing.pk, active_listings, u'Listings is still active')
 
     def test_delete_listings(self):
         """ User try to delete a listing """
         listing = ListingFactory()
+        count_listings = Listing.objects.count()
 
         response = self.client.delete(
             reverse('listings-detail', kwargs={'pk': listing.pk}),
         )
 
-        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED, u'Status code does not match')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT, u'Status code does not match')
+        self.assertLess(Listing.objects.count(), count_listings, u'Listing was not deleted from DB')
