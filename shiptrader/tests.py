@@ -5,8 +5,8 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 from django.urls import reverse
 
-from shiptrader.factories import StarshipFactory
-from shiptrader.models import Starship
+from shiptrader.factories import StarshipFactory, ListingFactory
+from shiptrader.models import Starship, Listing
 
 
 class StarshipTestCase(APITestCase):
@@ -113,6 +113,99 @@ class StarshipTestCase(APITestCase):
 
         response = self.client.delete(
             reverse('starships-detail', kwargs={'pk': starship.pk}),
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED, u'Status code does not match')
+
+
+class ListingTestCase(APITestCase):
+    """
+    Test listings endpoint
+    """
+
+    def setUp(self):
+        """ setUp function """
+        self.starship = StarshipFactory()
+        ListingFactory.create_batch(20)
+
+    def test_list_listings(self):
+        """ List should contains all listings """
+        response = self.client.get(
+            reverse('listings-list')
+        )
+
+        stored_data = response.data
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, u'Status code does not match')
+
+        count_listings = Listing.objects.count()
+        self.assertGreater(count_listings, 0, u'No listings on DB')
+        self.assertEqual(len(stored_data), count_listings, u'Number of results does not match')
+
+        fetched_listing = stored_data[0]
+        stored_listing = Listing.objects.get(pk=fetched_listing.get('id'))
+
+        # Validate listing values
+        self.assertEqual(fetched_listing.get('name'), stored_listing.name, u'name value does not match')
+        self.assertEqual(fetched_listing.get('price'), stored_listing.price, u'price value does not match')
+        self.assertEqual(fetched_listing.get('ship_type'), stored_listing.ship_type.pk,
+                         u'ship_type value does not match')
+
+    def test_get_listings(self):
+        """ Get returns a valid listing """
+        listing = ListingFactory()
+        response = self.client.get(
+            reverse('listings-detail', kwargs={'pk': listing.pk}),
+        )
+
+        stored_data = response.data
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, u'Status code does not match')
+
+        # Validate listing values
+        self.assertEqual(stored_data.get('name'), listing.name, u'name value does not match')
+        self.assertEqual(stored_data.get('price'), listing.price, u'price value does not match')
+        self.assertEqual(stored_data.get('ship_type'), listing.ship_type.pk, u'ship_type value does not match')
+
+    def test_get_invalid_listings(self):
+        """ User try to fetch details from an invalid listing """
+        response = self.client.get(
+            reverse('listings-detail', kwargs={'pk': 9999}),
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND, u'Status code does not match')
+
+    def test_create_listings(self):
+        """ User try to create a listing """
+        listing_stub = ListingFactory.stub(ship_type=self.starship.pk).__dict__
+
+        response = self.client.post(
+            reverse('listings-list'),
+            json.dumps(listing_stub),
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED, u'Status code does not match')
+
+    def test_update_listings(self):
+        """ User try to update a listing """
+        listing = ListingFactory()
+        listing_stub = ListingFactory.stub(ship_type=self.starship.pk).__dict__
+
+        response = self.client.put(
+            reverse('listings-detail', kwargs={'pk': listing.pk}),
+            json.dumps(listing_stub),
+            content_type='application/json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED, u'Status code does not match')
+
+    def test_delete_listings(self):
+        """ User try to delete a listing """
+        listing = ListingFactory()
+
+        response = self.client.delete(
+            reverse('listings-detail', kwargs={'pk': listing.pk}),
         )
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED, u'Status code does not match')

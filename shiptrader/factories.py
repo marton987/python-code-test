@@ -3,7 +3,7 @@ import random
 import factory.fuzzy
 import faker
 
-from shiptrader.models import Starship
+from shiptrader.models import Starship, Listing
 
 fake = faker.Factory.create()
 
@@ -20,3 +20,13 @@ class StarshipFactory(factory.DjangoModelFactory):
 
     class Meta:
         model = Starship
+
+
+class ListingFactory(factory.DjangoModelFactory):
+    """ Listing factory """
+    name = factory.LazyAttribute(lambda o: fake.name())
+    ship_type = factory.SubFactory(StarshipFactory)
+    price = random.randrange(1, 5000)
+
+    class Meta:
+        model = Listing
