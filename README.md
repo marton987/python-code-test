@@ -57,3 +57,20 @@ require.
 * A seller can deactivate and reactivate their listing
 
 After you are done, create a release branch in your repo and send us the link.
+
+
+## Results
+
+To import all existing Starships, you need to run the specific command:
+
+```
+./manage.py import_starships --endpoint https://swapi.co/api/starships/
+```
+
+Where the `endpoint` is the URL of the Starships.
+
+An extended documentation using Swagger is located at `http://localhost:8008/api-docs/`.
+
+To run tests, you should run the next command (For Docker):
+
+    ./manapy test
