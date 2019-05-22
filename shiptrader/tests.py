@@ -153,6 +153,62 @@ class ListingTestCase(APITestCase):
         self.assertEqual(fetched_listing.get('ship_type'), stored_listing.ship_type.pk,
                          u'ship_type value does not match')
 
+    def test_ordering_listings_list_price(self):
+        """ Users should be able to sort listings price """
+        response = self.client.get(
+            reverse('listings-list'),
+            {'ordering': 'price'}
+        )
+
+        stored_data = response.data
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, u'Status code does not match')
+
+        listings = list(Listing.objects.all().order_by('price').values_list('pk', flat=True))
+        self.assertEqual(stored_data[0].get('id'), listings[0], u'Listing order does not match')
+        self.assertEqual(stored_data[-1].get('id'), listings[-1], u'Listing order does not match')
+
+        # Run the same array, but with an inverse order
+        response = self.client.get(
+            reverse('listings-list'),
+            {'ordering': '-price'}
+        )
+
+        stored_data = response.data
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, u'Status code does not match')
+
+        self.assertEqual(stored_data[0].get('id'), listings[-1], u'Listing order does not match')
+        self.assertEqual(stored_data[-1].get('id'), listings[0], u'Listing order does not match')
+
+    def test_ordering_listings_list_listing_time(self):
+        """ Users should be able to sort listings listing_time """
+        response = self.client.get(
+            reverse('listings-list'),
+            {'ordering': 'listing_time'}
+        )
+
+        stored_data = response.data
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, u'Status code does not match')
+
+        listings = list(Listing.objects.all().order_by('listing_time').values_list('pk', flat=True))
+        self.assertEqual(stored_data[0].get('id'), listings[0], u'Listing order does not match')
+        self.assertEqual(stored_data[-1].get('id'), listings[-1], u'Listing order does not match')
+
+        # Run the same array, but with an inverse order
+        response = self.client.get(
+            reverse('listings-list'),
+            {'ordering': '-listing_time'}
+        )
+
+        stored_data = response.data
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, u'Status code does not match')
+
+        self.assertEqual(stored_data[0].get('id'), listings[-1], u'Listing order does not match')
+        self.assertEqual(stored_data[-1].get('id'), listings[0], u'Listing order does not match')
+
     def test_list_inactive_listings(self):
         """ List should contains only active listings """
         ListingFactory(listing_time=0)
