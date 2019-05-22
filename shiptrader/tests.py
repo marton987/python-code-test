@@ -148,8 +148,25 @@ class ListingTestCase(APITestCase):
         # Validate listing values
         self.assertEqual(fetched_listing.get('name'), stored_listing.name, u'name value does not match')
         self.assertEqual(fetched_listing.get('price'), stored_listing.price, u'price value does not match')
+        self.assertEqual(fetched_listing.get('listing_time'), stored_listing.listing_time,
+                         u'listing_time value does not match')
         self.assertEqual(fetched_listing.get('ship_type'), stored_listing.ship_type.pk,
                          u'ship_type value does not match')
+
+    def test_list_inactive_listings(self):
+        """ List should contains only active listings """
+        ListingFactory(listing_time=0)
+
+        response = self.client.get(
+            reverse('listings-list')
+        )
+
+        stored_data = response.data
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, u'Status code does not match')
+
+        count_listings = Listing.objects.count()
+        self.assertEqual(len(stored_data), count_listings - 1, u'Number of results does not match')
 
     def test_filter_listings(self):
         """ User should be able to filter listings against starship_class """
@@ -177,6 +194,7 @@ class ListingTestCase(APITestCase):
         self.assertEqual(fetched_listing.get('id'), listing.pk, u'Id value does not match')
         self.assertEqual(fetched_listing.get('name'), listing.name, u'name value does not match')
         self.assertEqual(fetched_listing.get('price'), listing.price, u'price value does not match')
+        self.assertEqual(fetched_listing.get('listing_time'), listing.listing_time, u'listing_time value does not match')
         self.assertEqual(fetched_listing.get('ship_type'), listing.ship_type.pk,
                          u'ship_type value does not match')
 

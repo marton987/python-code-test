@@ -21,11 +21,22 @@ class Starship(models.Model):
         return self.starship_class
 
 
+class ListingQuerySet(models.QuerySet):
+    """ Listing Queryset """
+
+    def active(self):
+        """Filter active listings"""
+        return self.filter(listing_time__gt=0)
+
+
 class Listing(models.Model):
     """ Listing model """
+    objects = ListingQuerySet.as_manager()
+
     name = models.CharField(max_length=255)
     ship_type = models.ForeignKey(Starship, related_name='listings')
     price = models.IntegerField()
+    listing_time = models.IntegerField(default=1)
 
     def __str__(self):
         """

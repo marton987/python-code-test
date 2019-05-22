@@ -18,7 +18,7 @@ class ListingViewSet(viewsets.ReadOnlyModelViewSet):
     """
     Viewset of Listing
     """
-    queryset = Listing.objects.all()
+    queryset = Listing.objects.active()
     serializer_class = ListingSerializer
     filter_backends = (DjangoFilterBackend,)
     filter_fields = ('ship_type__starship_class',)

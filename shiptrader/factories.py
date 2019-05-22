@@ -26,7 +26,8 @@ class ListingFactory(factory.DjangoModelFactory):
     """ Listing factory """
     name = factory.LazyAttribute(lambda o: fake.name())
     ship_type = factory.SubFactory(StarshipFactory)
-    price = random.randrange(1, 5000)
+    price = factory.LazyAttribute(lambda o: random.randrange(1, 5000))
+    listing_time = factory.LazyAttribute(lambda o: random.randrange(1, 50))
 
     class Meta:
         model = Listing

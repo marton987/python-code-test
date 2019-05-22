@@ -23,5 +23,5 @@ class ListingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Listing
         fields = (
-            'id', 'name', 'ship_type', 'price',
+            'id', 'name', 'ship_type', 'price', 'listing_time',
         )
